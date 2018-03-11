@@ -50,7 +50,7 @@ contract RootChain {
 
     struct childBlock {
         bytes32 root;
-        uint256 created_at;
+        uint256 createdAt;
     }
 
     /*
@@ -62,8 +62,8 @@ contract RootChain {
     }
 
     modifier incrementOldBlocks() {
-        while (childChain[weekOldBlock].created_at < block.timestamp.sub(1 weeks)) {
-            if (childChain[weekOldBlock].created_at == 0) 
+        while (childChain[weekOldBlock].createdAt < block.timestamp.sub(1 weeks)) {
+            if (childChain[weekOldBlock].createdAt == 0) 
                 break;
             weekOldBlock = weekOldBlock.add(1);
         }
@@ -95,7 +95,7 @@ contract RootChain {
         require(block.number >= lastParentBlock.add(6));
         childChain[currentChildBlock] = childBlock({
             root: root,
-            created_at: block.timestamp
+            createdAt: block.timestamp
         });
         currentChildBlock = currentChildBlock.add(1);
         lastParentBlock = block.number;
@@ -121,7 +121,7 @@ contract RootChain {
         }
         childChain[currentChildBlock] = childBlock({
             root: root,
-            created_at: block.timestamp
+            createdAt: block.timestamp
         });
         currentChildBlock = currentChildBlock.add(1);
         Deposit(txList[6].toAddress(), txList[7].toUint());
@@ -132,7 +132,7 @@ contract RootChain {
         view
         returns (bytes32, uint256)
     {
-        return (childChain[blockNumber].root, childChain[blockNumber].created_at);
+        return (childChain[blockNumber].root, childChain[blockNumber].createdAt);
     }
 
     function getExit(uint256 priority)
@@ -215,7 +215,7 @@ contract RootChain {
     {
         uint256 twoWeekOldTimestamp = block.timestamp.sub(2 weeks);
         exit memory currentExit = exits[exitsQueue.getMin()];
-        while (childChain[currentExit.utxoPos[0]].created_at < twoWeekOldTimestamp && exitsQueue.currentSize() > 0) {
+        while (childChain[currentExit.utxoPos[0]].createdAt < twoWeekOldTimestamp && exitsQueue.currentSize() > 0) {
             // return childChain[currentExit.utxoPos[0]].created_at;
             uint256 exitId = currentExit.utxoPos[0] * 1000000000 + currentExit.utxoPos[1] * 10000 + currentExit.utxoPos[2];
             currentExit.owner.transfer(currentExit.amount + currentExit.bond);
