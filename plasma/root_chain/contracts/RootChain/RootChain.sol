@@ -84,6 +84,7 @@ contract RootChain {
             intermediate = keccak256(intermediate, intermediate);
         }
     }
+
     /// @param root 32 byte merkleRoot of ChildChain block 
     /// @notice childChain blocks can only be submitted at most every 6 root chain blocks
     function submitBlock(bytes32 root)
@@ -154,23 +155,29 @@ contract RootChain {
     {
         var txList = txBytes.toRLPItem().toList();
         require(txList.length == 11);
-        require(msg.sender == txList[6 + 2 * txPos[2]].toAddress());
-        require(msg.value >= txList[7 + 2 * txPos[2]].toUint() * minExitBond / 100);
+
+        uint256 txBlockNumber = txPos[0];
+        uint256 txIndex = txPos[1];
+        uint256 txOutputIndex = txPos[2];
+
+        require(msg.sender == txList[6 + 2 * txOutputIndex].toAddress());
+        require(msg.value >= txList[7 + 2 * txOutputIndex].toUint() * minExitBond / 100);
+
         bytes32 txHash = keccak256(txBytes);
         bytes32 merkleHash = keccak256(txHash, ByteUtils.slice(sigs, 0, 130));
         uint256 inputCount = txList[3].toUint() * 1000000 + txList[0].toUint();
-        require(Validate.checkSigs(txHash, childChain[txPos[0]].root, inputCount, sigs));
-        require(merkleHash.checkMembership(txPos[1], childChain[txPos[0]].root, proof));
-        uint256 priority = 1000000000 + txPos[1] * 10000 + txPos[2];
-        uint256 exitId = txPos[0].mul(priority);
-        priority = priority.mul(Math.max(txPos[0], weekOldBlock));
+        require(Validate.checkSigs(txHash, childChain[txBlockNumber].root, inputCount, sigs));
+        require(merkleHash.checkMembership(txIndex, childChain[txBlockNumber].root, proof));
+        uint256 priority = 1000000000 + txIndex * 10000 + txOutputIndex;
+        uint256 exitId = txBlockNumber.mul(priority);
+        priority = priority.mul(Math.max(txBlockNumber, weekOldBlock));
         require(exitIds[exitId] == 0);
         require(exits[priority].amount == 0);
         exitIds[exitId] = priority;
         exitsQueue.insert(priority);
         exits[priority] = exit({
-            owner: txList[6 + 2 * txPos[2]].toAddress(),
-            amount: txList[7 + 2 * txPos[2]].toUint(),
+            owner: txList[6 + 2 * txOutputIndex].toAddress(),
+            amount: txList[7 + 2 * txOutputIndex].toUint(),
             bond: msg.value,
             utxoPos: txPos
         });
